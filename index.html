@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zion Treasury Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Lexend:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky header + tab bar, one screen per tab; summary first, detail below */
+:root{
+  --bg:#f2f4f3; --surface:#ffffff; --fg:#17231f; --muted:#5b6b65; --line:#dbe2df;
+  --accent:#1f6b52; --accent-soft:#e2efe9; --gold:#a8741a; --gold-soft:#f6ecd9;
+  --good:#1f7a4d; --bad:#b03a2e; --bad-soft:#f8e3e0; --track:#e6ebe9;
+  --f-display:"Literata",Georgia,"Times New Roman",serif;
+  --f-body:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1714; --surface:#17221e; --fg:#e7eeeb; --muted:#97a8a1; --line:#2a3833;
+  --accent:#6cc9a3; --accent-soft:#1d3a2f; --gold:#e3b25f; --gold-soft:#3a2d15;
+  --good:#6cc9a3; --bad:#f0897d; --bad-soft:#3d1f1b; --track:#24312c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1714; --surface:#17221e; --fg:#e7eeeb; --muted:#97a8a1; --line:#2a3833;
+  --accent:#6cc9a3; --accent-soft:#1d3a2f; --gold:#e3b25f; --gold-soft:#3a2d15;
+  --good:#6cc9a3; --bad:#f0897d; --bad-soft:#3d1f1b; --track:#24312c; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 var(--f-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in,.main{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top-in{padding-block:12px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{font:700 1.25rem var(--f-display);margin:0}
+.brand .who{font-size:.8rem;color:var(--muted)}
+.demo{font:500 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;background:var(--gold-soft);color:var(--gold);padding:3px 8px;border-radius:4px;white-space:nowrap}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav a{font-weight:500;font-size:.9rem;color:var(--muted);text-decoration:none;padding:10px 12px;border-bottom:3px solid transparent;white-space:nowrap}
+nav a.on{color:var(--accent);border-color:var(--accent)}
+nav a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.main{padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
+h2{font:700 1.4rem var(--f-display);margin:0;text-wrap:balance}
+h3{font:600 1rem var(--f-body);margin:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.label{font:500 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .v{font:500 1.5rem var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi .v.neg{color:var(--bad)} .kpi .v.pos{color:var(--good)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.fund{display:flex;flex-direction:column;gap:6px;padding-block:10px;border-bottom:1px solid var(--line)}
+.fund:last-child{border-bottom:none}
+.bar{height:8px;background:var(--track);border-radius:99px;overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--accent);border-radius:99px}
+.bar>span.over{background:var(--bad)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{font:500 .68rem var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+td.r,th.r{text-align:right}
+tfoot td{font-weight:600;border-top:2px solid var(--line)}
+.chip{font:500 .72rem var(--f-body);padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)}
+input,select{font:400 .95rem var(--f-body);padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);width:100%;min-width:0}
+button{font:600 .9rem var(--f-body);padding:10px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+.toast{font-size:.85rem;color:var(--good)}
+.chart text{font-family:var(--f-mono);font-size:11px}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.receipt{max-width:520px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:28px;display:flex;flex-direction:column;gap:14px}
+.receipt .head{text-align:center;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.receipt .church{font:700 1.15rem var(--f-display)}
+.receipt dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:.9rem}
+.receipt dt{color:var(--muted)} .receipt dd{margin:0}
+.receipt .amt{font:500 1.6rem var(--f-mono);text-align:center;padding:12px;background:var(--accent-soft);border-radius:6px}
+.sig{display:flex;justify-content:space-between;gap:16px;margin-top:18px;font-size:.78rem;color:var(--muted)}
+.sig div{border-top:1px solid var(--muted);padding-top:4px;flex:1}
+.note{font-size:.8rem;color:var(--muted)}
+.rep p{margin:0;max-width:65ch}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div>
+        <h1>Zion Treasury</h1>
+        <div class="who">Zion Lutheran Church, Brickfields · Signed in as Treasurer</div>
+      </div>
+      <span class="demo">Demo · sample data</span>
+    </div>
+    <nav id="nav">
+      <a href="#dashboard" data-v="dashboard">Dashboard</a>
+      <a href="#income" data-v="income">Income</a>
+      <a href="#expenses" data-v="expenses">Expenses</a>
+      <a href="#report" data-v="report">Monthly report</a>
+      <a href="#receipts" data-v="receipts">Donor receipts</a>
+    </nav>
+  </div>
+</header>
+<main class="main" id="view"></main>
+
+<script>
+(function(){
+const FUNDS=["General","Building","Missions"];
+const CATS=["Pastor allowance","Utilities","Building upkeep","Ministry programmes","Missions support","Office & admin"];
+const BUDGET={"Pastor allowance":54000,"Utilities":9600,"Building upkeep":18000,"Ministry programmes":12000,"Missions support":15000,"Office & admin":4800};
+const OPEN={General:42350,Building:86200,Missions:12800}; // balances at 1 Jul 2026 (sample)
+const MONTHS=["2026-07","2026-08","2026-09","2026-10"];
+const MNAME=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MEMBERS=["Samuel Raj","Grace Tan","David Arokiasamy","Mary Chong","Joshua Pillai","Ruth Lim","Daniel Kumar","Esther Wong"];
+
+// --- deterministic sample data ---
+let inc=[],exp=[],rn=1001;
+MONTHS.forEach((m,mi)=>{
+  ["03","10","17","24"].forEach((d,wi)=>{
+    inc.push({date:`${m}-${d}`,type:"Sunday offering",fund:"General",donor:"Anonymous",amt:2850+((mi*7+wi*13)%9)*95});
+  });
+  MEMBERS.forEach((p,pi)=>{ if((pi+mi)%3!==2) inc.push({date:`${m}-0${(pi%8)+1}`,type:"Tithe",fund:"General",donor:p,amt:[300,450,500,600,800,250,1000,350][pi]}); });
+  inc.push({date:`${m}-17`,type:"Donation",fund:"Building",donor:MEMBERS[(mi*3)%8],amt:[2000,1500,3000,2500][mi]});
+  inc.push({date:`${m}-24`,type:"Special offering",fund:"Missions",donor:"Anonymous",amt:[1450,1820,1260,2140][mi]});
+  exp.push({date:`${m}-01`,cat:"Pastor allowance",fund:"General",payee:"Pastor allowance",ref:`PV-${m.slice(5)}01`,amt:4500});
+  exp.push({date:`${m}-08`,cat:"Utilities",fund:"General",payee:"TNB electricity",ref:`PV-${m.slice(5)}02`,amt:[640,710,820,760][mi]});
+  exp.push({date:`${m}-09`,cat:"Utilities",fund:"General",payee:"Air Selangor",ref:`PV-${m.slice(5)}03`,amt:[95,88,102,97][mi]});
+  exp.push({date:`${m}-15`,cat:"Ministry programmes",fund:"General",payee:["Youth camp deposit","Sunday school materials","Choir robes","Children's Day"][mi],ref:`PV-${m.slice(5)}04`,amt:[1800,420,2600,950][mi]});
+  exp.push({date:`${m}-20`,cat:"Missions support",fund:"Missions",payee:"Orang Asli mission partner",ref:`PV-${m.slice(5)}05`,amt:1250});
+  exp.push({date:`${m}-22`,cat:"Office & admin",fund:"General",payee:"Printing & stationery",ref:`PV-${m.slice(5)}06`,amt:[310,180,260,420][mi]});
+  if(mi===1||mi===3) exp.push({date:`${m}-26`,cat:"Building upkeep",fund:"Building",payee:mi===1?"Roof repair (hall)":"Air-con servicing",ref:`PV-${m.slice(5)}07`,amt:mi===1?6800:1450});
+});
+inc.forEach(x=>x.no=rn++);
+inc.sort((a,b)=>b.date.localeCompare(a.date)); exp.sort((a,b)=>b.date.localeCompare(a.date));
+
+// --- helpers ---
+const RM=n=>"RM "+n.toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2});
+const RM0=n=>"RM "+Math.round(n).toLocaleString("en-MY");
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const mlabel=m=>`${MNAME[+m.slice(5)-1]} ${m.slice(0,4)}`;
+const dlabel=d=>`${+d.slice(8)} ${MNAME[+d.slice(5,7)-1]} ${d.slice(0,4)}`;
+const sum=(a,f=x=>x.amt)=>a.reduce((s,x)=>s+f(x),0);
+const inMonth=(a,m)=>a.filter(x=>x.date.startsWith(m));
+const latest=()=>[...new Set([...inc,...exp].map(x=>x.date.slice(0,7)))].sort().at(-1);
+function balances(){const b={...OPEN};inc.forEach(x=>b[x.fund]+=x.amt);exp.forEach(x=>b[x.fund]-=x.amt);return b;}
+let repMonth=null, recNo=null, flash="";
+
+// --- views ---
+const V={};
+V.dashboard=()=>{
+  const m=latest(),mi=sum(inMonth(inc,m)),me=sum(inMonth(exp,m)),bal=balances(),tot=FUNDS.reduce((s,f)=>s+bal[f],0);
+  const ytd={};CATS.forEach(c=>ytd[c]=sum(exp.filter(x=>x.cat===c)));
+  const series=MONTHS.map(mm=>({m:mm,i:sum(inMonth(inc,mm)),e:sum(inMonth(exp,mm))}));
+  const max=Math.max(...series.flatMap(s=>[s.i,s.e]))*1.1, W=560,H=200,pl=56,pb=28,bw=34;
+  const y=v=>H-pb-(v/max)*(H-pb-12);
+  const steps=[0,10000,20000,30000].filter(v=>v<max);
+  const svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Income and expenses by month">
+    ${steps.map(v=>`<line x1="${pl}" x2="${W-8}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pl-8}" y="${y(v)+4}" text-anchor="end" fill="var(--muted)">${v/1000}k</text>`).join("")}
+    ${series.map((s,i)=>{const cx=pl+40+i*((W-pl-60)/series.length);return `
+      <rect x="${cx}" y="${y(s.i)}" width="${bw}" height="${H-pb-y(s.i)}" rx="3" fill="var(--accent)"/>
+      <rect x="${cx+bw+4}" y="${y(s.e)}" width="${bw}" height="${H-pb-y(s.e)}" rx="3" fill="var(--gold)"/>
+      <text x="${cx+bw+2}" y="${H-8}" text-anchor="middle" fill="var(--muted)">${MNAME[+s.m.slice(5)-1]}</text>`}).join("")}
+  </svg>`;
+  return `<div class="row"><h2>${mlabel(m)} at a glance</h2><span class="note">Pastor and treasurer see this page</span></div>
+  <div class="kpis">
+    <div class="card kpi"><span class="label">Income this month</span><span class="v">${RM0(mi)}</span></div>
+    <div class="card kpi"><span class="label">Expenses this month</span><span class="v">${RM0(me)}</span></div>
+    <div class="card kpi"><span class="label">Net this month</span><span class="v ${mi-me>=0?"pos":"neg"}">${mi-me>=0?"+":"−"}${RM0(Math.abs(mi-me))}</span></div>
+    <div class="card kpi"><span class="label">Total in all funds</span><span class="v">${RM0(tot)}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="row"><h3>Income vs expenses</h3><div class="legend"><span><i style="background:var(--accent)"></i>Income</span><span><i style="background:var(--gold)"></i>Expenses</span></div></div>${svg}</div>
+    <div class="card"><h3>Fund balances</h3>${FUNDS.map(f=>`<div class="fund"><div class="row"><span>${f} Fund</span><span class="num">${RM(bal[f])}</span></div><div class="bar"><span style="width:${Math.round(bal[f]/tot*100)}%"></span></div></div>`).join("")}</div>
+  </div>
+  <div class="card"><div class="row"><h3>Budget vs actual, ${MONTHS[0].slice(0,4)} year to date</h3><span class="note">Budget shown for 4 of 12 months</span></div>
+    ${CATS.map(c=>{const b=BUDGET[c]*MONTHS.length/12,p=ytd[c]/b;return `<div class="fund"><div class="row"><span>${c}</span><span class="num">${RM0(ytd[c])} <span class="note">of ${RM0(b)}</span></span></div><div class="bar"><span class="${p>1?"over":""}" style="width:${Math.min(100,Math.round(p*100))}%"></span></div></div>`}).join("")}
+  </div>`;
+};
+V.income=()=>{
+  const t=new Date().toISOString().slice(0,10);
+  return `<div class="row"><h2>Income</h2><span class="note">${inc.length} entries · ${RM(sum(inc))} recorded</span></div>
+  <div class="card"><h3 style="margin-bottom:12px">Record income</h3>
+  <form id="fi">
+    <label class="f">Date<input id="i-date" type="date" value="${t}" required></label>
+    <label class="f">Type<select id="i-type"><option>Sunday offering</option><option>Tithe</option><option>Donation</option><option>Special offering</option></select></label>
+    <label class="f">Fund<select id="i-fund">${FUNDS.map(f=>`<option>${f}</option>`).join("")}</select></label>
+    <label class="f">Donor<select id="i-donor"><option>Anonymous</option>${MEMBERS.map(p=>`<option>${p}</option>`).join("")}</select></label>
+    <label class="f">Amount (RM)<input id="i-amt" type="number" min="1" step="0.01" placeholder="0.00" required></label>
+    <button type="submit">Save income</button>
+  </form>${flash?`<p class="toast">${flash}</p>`:""}</div>
+  <div class="card scroll"><table><thead><tr><th>Date</th><th>Receipt no.</th><th>Type</th><th>Fund</th><th>Donor</th><th class="r">Amount</th></tr></thead><tbody>
+  ${inc.map(x=>`<tr><td>${dlabel(x.date)}</td><td class="num">ZLC-${x.no}</td><td>${x.type}</td><td><span class="chip">${x.fund}</span></td><td>${esc(x.donor)}</td><td class="r num">${RM(x.amt)}</td></tr>`).join("")}</tbody></table></div>`;
+};
+V.expenses=()=>{
+  const t=new Date().toISOString().slice(0,10);
+  return `<div class="row"><h2>Expenses</h2><span class="note">${exp.length} payments · ${RM(sum(exp))} paid</span></div>
+  <div class="card"><h3 style="margin-bottom:12px">Record a payment</h3>
+  <form id="fe">
+    <label class="f">Date<input id="e-date" type="date" value="${t}" required></label>
+    <label class="f">Category<select id="e-cat">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></label>
+    <label class="f">Paid from fund<select id="e-fund">${FUNDS.map(f=>`<option>${f}</option>`).join("")}</select></label>
+    <label class="f">Payee<input id="e-payee" placeholder="e.g. TNB electricity" required></label>
+    <label class="f">Voucher / receipt ref<input id="e-ref" placeholder="PV-1008"></label>
+    <label class="f">Amount (RM)<input id="e-amt" type="number" min="1" step="0.01" placeholder="0.00" required></label>
+    <button type="submit">Save payment</button>
+  </form>${flash?`<p class="toast">${flash}</p>`:""}</div>
+  <div class="card scroll"><table><thead><tr><th>Date</th><th>Voucher</th><th>Payee</th><th>Category</th><th>Fund</th><th class="r">Amount</th></tr></thead><tbody>
+  ${exp.map(x=>`<tr><td>${dlabel(x.date)}</td><td class="num">${esc(x.ref||"–")}</td><td>${esc(x.payee)}</td><td>${x.cat}</td><td><span class="chip">${x.fund}</span></td><td class="r num">${RM(x.amt)}</td></tr>`).join("")}</tbody></table></div>`;
+};
+V.report=()=>{
+  const ms=[...new Set([...inc,...exp].map(x=>x.date.slice(0,7)))].sort();
+  const m=repMonth&&ms.includes(repMonth)?repMonth:ms.at(-1);
+  const I=inMonth(inc,m),E=inMonth(exp,m),ti=sum(I),te=sum(E);
+  const byType={};I.forEach(x=>byType[x.type]=(byType[x.type]||0)+x.amt);
+  const byCat={};E.forEach(x=>byCat[x.cat]=(byCat[x.cat]||0)+x.amt);
+  const bal=balances();
+  return `<div class="row"><h2>Treasurer's report</h2><select id="rep-m" aria-label="Report month">${ms.map(x=>`<option value="${x}" ${x===m?"selected":""}>${mlabel(x)}</option>`).join("")}</select></div>
+  <div class="card rep" style="display:flex;flex-direction:column;gap:16px">
+    <div><div class="label">For the Church Council</div><h3 style="font:700 1.15rem var(--f-display);margin-top:4px">Zion Lutheran Church, Brickfields — ${mlabel(m)}</h3></div>
+    <p>Income for the month was <b>${RM(ti)}</b> and expenses were <b>${RM(te)}</b>, a ${ti>=te?"surplus":"deficit"} of <b>${RM(Math.abs(ti-te))}</b>.</p>
+    <div class="grid2">
+      <div class="scroll"><table><thead><tr><th>Income</th><th class="r">RM</th></tr></thead><tbody>${Object.entries(byType).map(([k,v])=>`<tr><td>${k}</td><td class="r num">${v.toLocaleString("en-MY",{minimumFractionDigits:2})}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total income</td><td class="r num">${ti.toLocaleString("en-MY",{minimumFractionDigits:2})}</td></tr></tfoot></table></div>
+      <div class="scroll"><table><thead><tr><th>Expenses</th><th class="r">RM</th></tr></thead><tbody>${Object.entries(byCat).map(([k,v])=>`<tr><td>${k}</td><td class="r num">${v.toLocaleString("en-MY",{minimumFractionDigits:2})}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total expenses</td><td class="r num">${te.toLocaleString("en-MY",{minimumFractionDigits:2})}</td></tr></tfoot></table></div>
+    </div>
+    <div class="scroll"><table><thead><tr><th>Fund</th><th class="r">Balance today (RM)</th></tr></thead><tbody>${FUNDS.map(f=>`<tr><td>${f} Fund</td><td class="r num">${bal[f].toLocaleString("en-MY",{minimumFractionDigits:2})}</td></tr>`).join("")}</tbody></table></div>
+    <div class="sig"><div>Prepared by: Treasurer</div><div>Reviewed by: Pastor</div></div>
+  </div>
+  <p class="note">In the full system this report exports to PDF and Excel with one tap.</p>`;
+};
+V.receipts=()=>{
+  const named=inc.filter(x=>x.donor!=="Anonymous");
+  const r=named.find(x=>x.no===recNo)||named[0];
+  return `<div class="row"><h2>Donor receipts</h2>
+    <select id="rec" aria-label="Choose donation">${named.map(x=>`<option value="${x.no}" ${x.no===r.no?"selected":""}>ZLC-${x.no} · ${esc(x.donor)} · ${RM0(x.amt)}</option>`).join("")}</select></div>
+  <div class="receipt">
+    <div class="head"><span class="church">Zion Lutheran Church</span><span class="note">Evangelical Lutheran Church in Malaysia · Brickfields, Kuala Lumpur</span><span class="label" style="margin-top:8px">Official receipt</span></div>
+    <dl><dt>Receipt no.</dt><dd class="num">ZLC-${r.no}</dd><dt>Date</dt><dd>${dlabel(r.date)}</dd><dt>Received from</dt><dd><b>${esc(r.donor)}</b></dd><dt>For</dt><dd>${r.type} · ${r.fund} Fund</dd></dl>
+    <div class="amt">${RM(r.amt)}</div>
+    <p class="note" style="margin:0;text-align:center">Thank you for your faithful giving.</p>
+    <div class="sig"><div>Treasurer</div><div>Date issued</div></div>
+  </div>
+  <p class="note" style="text-align:center">In the full system each receipt is numbered automatically and saved as a PDF to print or email. Yearly statements per donor are included.</p>`;
+};
+
+// --- router ---
+const view=document.getElementById("view");
+function show(){
+  const k=(location.hash||"#dashboard").slice(1);const v=V[k]?k:"dashboard";
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.v===v));
+  view.innerHTML=V[v]();flash="";bind();
+}
+function bind(){
+  const fi=document.getElementById("fi");
+  if(fi) fi.addEventListener("submit",e=>{e.preventDefault();const g=id=>document.getElementById(id).value;
+    const x={date:g("i-date"),type:g("i-type"),fund:g("i-fund"),donor:g("i-donor"),amt:parseFloat(g("i-amt")),no:rn++};
+    if(!(x.amt>0)||!x.date)return;inc.unshift(x);inc.sort((a,b)=>b.date.localeCompare(a.date));flash=`Saved ${RM(x.amt)} to the ${x.fund} Fund as receipt ZLC-${x.no}.`;show();});
+  const fe=document.getElementById("fe");
+  if(fe) fe.addEventListener("submit",e=>{e.preventDefault();const g=id=>document.getElementById(id).value;
+    const x={date:g("e-date"),cat:g("e-cat"),fund:g("e-fund"),payee:g("e-payee").trim(),ref:g("e-ref").trim(),amt:parseFloat(g("e-amt"))};
+    if(!(x.amt>0)||!x.payee)return;exp.unshift(x);exp.sort((a,b)=>b.date.localeCompare(a.date));flash=`Saved payment of ${RM(x.amt)} to ${x.payee}.`;show();});
+  const rm=document.getElementById("rep-m"); if(rm) rm.addEventListener("change",()=>{repMonth=rm.value;show();});
+  const rc=document.getElementById("rec"); if(rc) rc.addEventListener("change",()=>{recNo=+rc.value;show();});
+}
+window.addEventListener("hashchange",show);
+show();
+})();
+</script>
+
+</body>
+</html>
